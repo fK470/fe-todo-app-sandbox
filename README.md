@@ -7,21 +7,23 @@ This is a project bootstrapped with [`@vitejs/app`](https://vitejs.dev/guide/#sc
 
 ## Getting Started
 
-You can either click [`Use this template`](https://github.com/agustinusnathaniel/vite-react-tailwind-starter/generate) button on this repository and clone the repo or use npx degit like so:
 
 ```bash
 git clone 
 ```
 
 ```
-pnpm i
+pnpm install
 ```
 
 Then, run the development server:
 
 ```bash
+# You haven't prepared API. Then run json-server.
+# Make sure the port in 'api/config.ts' is 3000.
 pnpm json-server
-# Open anoter terminal
+
+# Open anoter terminal and run app dev server.
 pnpm dev
 ```
 
