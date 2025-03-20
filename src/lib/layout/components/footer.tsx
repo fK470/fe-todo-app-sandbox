@@ -3,13 +3,13 @@ export const Footer = () => {
     <footer className="wrapper">
       <div className="flex">
         <p className="text-xs">
-          {new Date().getFullYear()} -{" "}
+          {new Date().getFullYear()} -{" powered by "}
           <a
             href="https://agustinusnathaniel.com"
             target="_blank"
             rel="noopener noreferrer"
           >
-            sample.com
+            agustinusnathaniel.com
           </a>
         </p>
       </div>

@@ -3,11 +3,13 @@ import type { Todo } from "@/lib/types/todo";
 
 interface TodoListProps {
   todos: Array<Todo>;
-  onDeleteTodo: (id: string) => void;
+  onDeleteTodo: (id: number) => void;
   onToggleComplete: (index: number) => void;
-  onEditTodo: (index: number) => void;
-  onSaveTodo: (index: number, newText: string) => void;
-  onCancelEdit: () => void;
+  onSaveTodo: (
+    index: number,
+    newTitle: string,
+    newDescription: string | null
+  ) => void;
   loading: boolean;
   error: string | null;
 }
@@ -16,18 +18,18 @@ const TodoList: React.FC<TodoListProps> = ({
   todos,
   onDeleteTodo,
   onToggleComplete,
-  onEditTodo,
   onSaveTodo,
-  onCancelEdit,
   loading,
   error,
 }) => {
   return (
     <>
-      {todos.length === 0 && !loading && !error ? (
+      {loading && <p>Loading...</p>}
+      {error && <p className="text-red-500">{error}</p>}
+      {!loading && !error && todos.length === 0 ? (
         <p>No todos yet!</p>
       ) : (
-        <ul className="w-full max-w-md">
+        <ul className="w-lg">
           {todos.map((todo, index) => (
             <TodoItem
               key={todo.id}
@@ -36,9 +38,7 @@ const TodoList: React.FC<TodoListProps> = ({
               id={todo.id}
               onDeleteTodo={onDeleteTodo}
               onToggleComplete={onToggleComplete}
-              onEditTodo={onEditTodo}
               onSaveTodo={onSaveTodo}
-              onCancelEdit={onCancelEdit}
             />
           ))}
         </ul>

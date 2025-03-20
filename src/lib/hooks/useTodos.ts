@@ -1,13 +1,7 @@
 import { useState, useEffect } from "react";
 import type { Todo } from "@/lib/types/todo";
 import { BASE_URL } from "@/lib/api/config";
-
-const handleApiError = (res: Response) => {
-  if (res.status === 404) {
-    return;
-  }
-  throw new Error(`API request failed with status: ${res.status}`);
-};
+import axios from "axios";
 
 export const useTodos = () => {
   const [todos, setTodos] = useState<Array<Todo>>([]);
@@ -19,15 +13,11 @@ export const useTodos = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(BASE_URL);
-        if (!res.ok) {
-          handleApiError(res);
-        }
-        const fetchedTodos = await res.json();
-        setTodos(fetchedTodos);
-      } catch (err) {
+        const response = await axios.get<Todo[]>(`${BASE_URL}/todos`);
+        setTodos(response.data);
+      } catch (error: any) {
         setError("Failed to fetch todos.");
-        console.error("Failed to fetch todos:", err);
+        console.error("Fetch todos error:", error);
       } finally {
         setLoading(false);
       }
@@ -36,67 +26,52 @@ export const useTodos = () => {
   }, []);
 
   const addTodo = async (todo: Todo) => {
+    if (!todo.title.trim()) {
+      setError("Todo title cannot be empty.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(BASE_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text: todo.text, completed: false }),
+      const response = await axios.post<Todo>(`${BASE_URL}/todos`, {
+        title: todo.title,
+        done: false,
       });
-      if (!res.ok) {
-        handleApiError(res);
-      }
-      const newTodo = await res.json();
-      setTodos([...todos, newTodo]);
-    } catch (err) {
+      setTodos([...todos, response.data]);
+    } catch (error: any) {
       setError("Failed to add todo.");
-      console.error("Failed to add todo:", err);
+      console.error("Add todo error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const deleteTodo = async (id: string) => {
+  const deleteTodo = async (id: number) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${BASE_URL}/${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        handleApiError(res);
-      }
+      await axios.delete(`${BASE_URL}/todos/${id}`);
       setTodos(todos.filter((todo) => todo.id !== id));
-    } catch (err) {
+    } catch (error: any) {
       setError("Failed to delete todo.");
-      console.error("Failed to delete todo:", err);
+      console.error("Delete todo error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const updateTodo = async (id: string, data: Partial<Todo>) => {
-    setLoading(true);
+  const updateTodo = async (id: number, data: Partial<Todo>) => {
     setError(null);
+    setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!res.ok) {
-        handleApiError(res);
-      }
-      return await res.json();
-    } catch (err) {
+      const response = await axios.patch<Todo>(
+        `${BASE_URL}/todos/${id}`,
+        data
+      );
+      return response.data;
+    } catch (error: any) {
       setError("Failed to update todo.");
-      console.error("Failed to update todo:", err);
+      console.error("Update todo error:", error);
       return null;
     } finally {
       setLoading(false);
@@ -104,37 +79,49 @@ export const useTodos = () => {
   };
 
   const toggleComplete = async (index: number) => {
-    const todoToUpdate = todos[index];
-    if (!todoToUpdate) return;
-    const updatedTodo = await updateTodo(todoToUpdate.id, {
-      completed: !todoToUpdate.completed,
-    });
-    if (updatedTodo) {
-      setTodos(
-        todos.map((todo, i) => (i === index ? updatedTodo : todo))
+    if (index < 0 || index >= todos.length) return;
+    const todo = todos[index];
+    setError(null);
+    try {
+      const response = await axios.patch<Todo>(
+        `${BASE_URL}/todos/${todo.id}`,
+        {
+          done: !todo.done,
+        }
       );
+      setTodos(
+        todos.map((t) =>
+          t.id === response.data.id ? response.data : t
+        )
+      );
+    } catch (error: any) {
+      setError("Failed to toggle todo completion.");
+      console.error("Toggle complete error:", error);
     }
   };
 
-  const saveTodo = async (index: number, newText: string) => {
+  const saveTodo = async (
+    index: number,
+    newTitle: string,
+    newDescription: string | null
+  ) => {
     const todoToUpdate = todos[index];
-    if (!todoToUpdate) return;
+    if (!todoToUpdate || todoToUpdate.id === null) return;
+    if (!newTitle.trim()) {
+      setError("Todo title cannot be empty.");
+      return;
+    }
     const updatedTodo = await updateTodo(todoToUpdate.id, {
-      text: newText,
+      title: newTitle,
+      description: newDescription,
     });
     if (updatedTodo) {
       setTodos(
-        todos.map((todo, i) => (i === index ? updatedTodo : todo))
+        todos.map((todo) =>
+          todo.id === updatedTodo.id ? updatedTodo : todo
+        )
       );
     }
-  };
-
-  const editTodo = (index: number) => {
-    // No need to implement anything here, as the edit state is managed in TodoItem
-  };
-
-  const cancelEdit = () => {
-    // No need to implement anything here, as the edit state is managed in TodoItem
   };
 
   return {
@@ -143,8 +130,6 @@ export const useTodos = () => {
     deleteTodo,
     toggleComplete,
     saveTodo,
-    editTodo,
-    cancelEdit,
     loading,
     error,
   };
