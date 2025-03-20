@@ -9,7 +9,7 @@ This is a project bootstrapped with [`@vitejs/app`](https://vitejs.dev/guide/#sc
 
 
 ```bash
-git clone 
+git clone https://github.com/fK470/fe-todo-app-sandbox
 ```
 
 ```
